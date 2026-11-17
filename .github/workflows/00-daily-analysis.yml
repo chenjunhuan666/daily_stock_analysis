@@ -1,9 +1,10 @@
 name: 每日股票分析
 
 on:
-  # 定时触发 - 周一到周五北京时间 16:00（UTC 08:00）
+  # 定时触发 - 周一到周五北京时间 16:00，16:13 检查并补跑（UTC 08:00、08:13）
   schedule:
     - cron: '0 8 * * 1-5'
+    - cron: '13 8 * * 1-5'
   
   # 手动触发
   workflow_dispatch:
@@ -31,6 +32,9 @@ concurrency:
 jobs:
   analyze:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     # 兼容误将 STOCK_LIST 配到同名 Environment variables 的场景；
     # 推荐位置仍是 Settings -> Secrets and variables -> Actions -> Repository variables。
     environment: STOCK_LIST
@@ -38,29 +42,42 @@ jobs:
     timeout-minutes: ${{ fromJSON(vars.ANALYSIS_TIMEOUT_MINUTES || '30') }}
     
     steps:
-      - name: 随机延迟（避免固定时间访问）
-        run: sleep $((RANDOM % 60))  # 随机延迟0-60秒启动
-      
       - name: 检出代码
         uses: actions/checkout@v5
+
+      - name: 核对今日大盘邮件记录
+        id: schedule_guard
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/check_market_review_schedule.py
+
+      - name: 随机延迟（避免固定时间访问）
+        if: steps.schedule_guard.outputs.skip != 'true'
+        run: sleep $((RANDOM % 60))  # 随机延迟0-60秒启动
       
       - name: 设置 Python 环境
+        if: steps.schedule_guard.outputs.skip != 'true'
         uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: 'pip'
       
       - name: 安装依赖
+        if: steps.schedule_guard.outputs.skip != 'true'
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
           python -c "import futu; print('✅ futu SDK import OK')"
       
       - name: 创建必要目录
+        if: steps.schedule_guard.outputs.skip != 'true'
         run: |
           mkdir -p data logs reports
       
       - name: 执行股票分析
+        id: analysis
+        if: steps.schedule_guard.outputs.skip != 'true'
         env:
           # ==========================================
           # AI 配置
@@ -568,7 +585,7 @@ jobs:
       
       - name: 上传分析报告
         uses: actions/upload-artifact@v6
-        if: always()
+        if: always() && steps.analysis.outcome != 'skipped'
         with:
           name: analysis-reports-${{ github.run_number }}
           path: |
@@ -577,7 +594,7 @@ jobs:
           retention-days: 30
       
       - name: 显示运行结果
-        if: always()
+        if: always() && steps.analysis.outcome != 'skipped'
         run: |
           echo ""
           echo "=========================================="

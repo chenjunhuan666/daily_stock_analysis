@@ -788,12 +788,15 @@ If `--stocks` is also present, the Futu portfolio wins. Scheduled mode reloads r
 
 ### GitHub Actions Schedule
 
+The market review is scheduled for 16:00 Beijing time on weekdays, with a backup check at 16:13. Scheduled runs check for a successful email delivery of that day's closing review before starting. Actual start times depend on GitHub Actions scheduling.
+
 Edit `.github/workflows/00-daily-analysis.yml`:
 
 ```yaml
 schedule:
   # UTC time, Beijing time = UTC + 8
   - cron: '0 8 * * 1-5'    # Monday to Friday 16:00 (Beijing Time)
+  - cron: '13 8 * * 1-5'   # Backup check at 16:13 (Beijing Time)
 ```
 
 Common time reference:

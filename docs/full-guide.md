@@ -846,12 +846,15 @@ OpenD 默认地址为 `127.0.0.1:11111`，可用 `FUTU_OPEND_HOST` / `FUTU_OPEND
 
 ### GitHub Actions 定时
 
+工作日北京时间 16:00 启动大盘复盘，16:13 再检查是否需要补跑。定时运行会核对当天收盘后的大盘邮件发送记录，已发出则跳过；实际触发时间由 GitHub Actions 调度。
+
 编辑 `.github/workflows/00-daily-analysis.yml`:
 
 ```yaml
 schedule:
   # UTC 时间，北京时间 = UTC + 8
   - cron: '0 8 * * 1-5'    # 周一到周五 16:00（北京时间）
+  - cron: '13 8 * * 1-5'   # 周一到周五 16:13（北京时间）补跑
 ```
 
 常用时间对照：

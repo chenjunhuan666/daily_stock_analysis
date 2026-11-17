@@ -437,12 +437,14 @@ git push
 ### Schedule Details
 
 Market review runs automatically **Monday to Friday at 16:00 Beijing time**. Manual runs also default to `market-only`.
+The workflow checks again at **16:13**. Scheduled runs skip repeat delivery when the day's closing review has already been emailed. GitHub Actions controls the actual start time for both triggers.
 
 Modify time: Edit cron expression in `.github/workflows/00-daily-analysis.yml`:
 
 ```yaml
 schedule:
   - cron: '0 8 * * 1-5'  # UTC time, +8 = Beijing time
+  - cron: '13 8 * * 1-5' # Backup check at 16:13 Beijing time
 ```
 
 Common cron examples:
