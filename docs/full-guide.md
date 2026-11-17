@@ -157,7 +157,7 @@ daily_stock_analysis/
 
 | Secret 名称 | 说明 | 必填 |
 |------------|------|:----:|
-| `STOCK_LIST` | 自选股代码，如 `600519,300750,002594,7203.T,005930.KS`；推荐使用英文逗号，中文逗号、顿号、分号、空格和换行会被识别并规范为英文逗号 | ✅ |
+| `STOCK_LIST` | 手动个股分析的自选股代码，如 `600519,300750,002594,7203.T,005930.KS`；推荐使用英文逗号，中文逗号、顿号、分号、空格和换行会被识别并规范为英文逗号 | 可选 |
 | `SERPAPI_API_KEYS` | [SerpAPI](https://serpapi.com/github-daily-stock-analysis) 搜索引擎结果补强，适合实时金融新闻 | 推荐 |
 | `ANSPIRE_API_KEYS` | [Anspire](https://open.anspire.cn/dsa?share_code=QFBC0FYC) API Key（可选，模型与搜索共用；可用性以账号权限为准） | 可选 |
 | `TAVILY_API_KEYS` | [Tavily](https://tavily.com/) 搜索 API（新闻搜索） | 可选 |
@@ -208,7 +208,7 @@ daily_stock_analysis/
 
 1. **AI 模型**：按 [Modelflare Channels 示例](LLM_CONFIG_GUIDE.md#示例modelflare) 配置，或使用 `AIHUBMIX_KEY`（[AIHubmix](https://inferera.com/?aff=CfMq)，一 Key 多模型）、`GEMINI_API_KEY` 或 `OPENAI_API_KEY`
 2. **通知渠道**：至少配置一个，如 `WECHAT_WEBHOOK_URL` 或 `EMAIL_SENDER` + `EMAIL_PASSWORD`
-3. **股票列表**：`STOCK_LIST`（必填）
+3. **股票列表**：`STOCK_LIST`（手动个股分析时选填）
 4. **搜索 API**：`SERPAPI_API_KEYS` 或 `TAVILY_API_KEYS`；`ANSPIRE_API_KEYS` 仍可选用
 
 > 💡 配置完以上 4 项即可开始使用！
@@ -229,7 +229,7 @@ daily_stock_analysis/
 
 ### 5. 完成！
 
-默认每个工作日 **16:00（北京时间）** 自动执行。
+每个工作日 **16:00（北京时间）** 自动执行大盘复盘。手动运行也默认使用 `market-only`，可选择 `full` 或 `stocks-only` 分析自选股。
 
 ---
 

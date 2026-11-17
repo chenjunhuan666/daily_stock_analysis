@@ -109,11 +109,11 @@ Start with one provider and one API key. For multi-model routing, image recognit
 
 More channels, signatures, email groups, and Markdown-to-image settings are in [Notification Configuration](./full-guide_EN.md#notification-channel-configuration).
 
-**Watchlist (required)**
+**Watchlist (for manual stock analysis)**
 
 | Secret Name | Description | Required |
 |-------------|-------------|:--------:|
-| `STOCK_LIST` | Watchlist codes, such as `600519,hk00700,AAPL,7203.T,005930.KS,2330.TW`; registered-index explicit codes (e.g. `sh000016`, `930606.CSI`) are supported via the one-shot `--stocks` argument or the GitHub Actions entry — see [Index watchlist configuration](./full-guide_EN.md#index-watchlist-configuration) | ✅ |
+| `STOCK_LIST` | Watchlist codes, such as `600519,hk00700,AAPL,7203.T,005930.KS,2330.TW`; registered-index explicit codes (e.g. `sh000016`, `930606.CSI`) are supported via the one-shot `--stocks` argument or the GitHub Actions entry — see [Index watchlist configuration](./full-guide_EN.md#index-watchlist-configuration) | Optional |
 
 **News sources (recommended)**
 
@@ -154,7 +154,7 @@ Open the `Actions` tab and click `I understand my workflows, go ahead and enable
 
 #### Done
 
-By default, the workflow runs every weekday at 16:00 Beijing time and skips non-trading days. Forced runs, trading-day checks, and resume rules are covered in the [Full Guide](./full-guide_EN.md#scheduled-task-configuration).
+The scheduled workflow runs the market review every weekday at 16:00 Beijing time and skips non-trading days by default. Manual runs also default to `market-only`, with other modes available. Forced runs, trading-day checks, and resume rules are covered in the [Full Guide](./full-guide_EN.md#scheduled-task-configuration).
 
 ### Option 2: Local / Docker Deployment
 

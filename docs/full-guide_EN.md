@@ -150,7 +150,7 @@ Go to your forked repo → `Settings` → `Secrets and variables` → `Actions` 
 
 | Secret Name | Description | Required |
 |------------|------|:----:|
-| `STOCK_LIST` | Watchlist codes, e.g., `600519,300750,002594,7203.T,005930.KS`; English commas are recommended, while pasted Chinese commas, enumeration commas, semicolons, spaces, and newlines are recognized and normalized to English commas | ✅ |
+| `STOCK_LIST` | Watchlist codes for manual stock analysis, e.g., `600519,300750,002594,7203.T,005930.KS`; English commas are recommended, while pasted Chinese commas, enumeration commas, semicolons, spaces, and newlines are recognized and normalized to English commas | Optional |
 | `SERPAPI_API_KEYS` | [SerpAPI](https://serpapi.com/github-daily-stock-analysis) search-engine results for realtime financial news | Recommended |
 | `ANSPIRE_API_KEYS` | [Anspire](https://open.anspire.cn/dsa?share_code=QFBC0FYC) API key (optional; shared by LLM and search; availability depends on account permissions) | Optional |
 | `TAVILY_API_KEYS` | [Tavily](https://tavily.com/) Search API (for news search) | Optional |
@@ -181,7 +181,7 @@ To get started quickly, you need at minimum:
 
 1. **AI Model**: Follow the [Modelflare Channels example](LLM_CONFIG_GUIDE_EN.md#example-modelflare), or use `AIHUBMIX_KEY` (one key for multiple model families), `GEMINI_API_KEY`, or `OPENAI_API_KEY`
 2. **Notification Channel**: At least one, e.g., `WECHAT_WEBHOOK_URL` or `EMAIL_SENDER` + `EMAIL_PASSWORD`
-3. **Stock List**: `STOCK_LIST` (required)
+3. **Stock List**: `STOCK_LIST` (optional for manual stock analysis)
 4. **Search API**: `SERPAPI_API_KEYS` or `TAVILY_API_KEYS`; `ANSPIRE_API_KEYS` remains optional
 
 > Configure these 4 items and you're ready to go!
@@ -202,7 +202,7 @@ To get started quickly, you need at minimum:
 
 ### 5. Done!
 
-Default schedule: Every weekday at **16:00 (Beijing Time)** automatic execution.
+Market review runs automatically every weekday at **16:00 Beijing time**. Manual runs also default to `market-only`. Choose `full` or `stocks-only` to analyze the watchlist.
 
 ---
 

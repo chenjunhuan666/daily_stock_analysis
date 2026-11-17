@@ -395,7 +395,7 @@ Add these Secrets:
 | `EMAIL_PASSWORD` | Email authorization code | Optional* |
 | `SERVERCHAN3_SENDKEY` | ServerChan v3 Sendkey | Optional* |
 | `CUSTOM_WEBHOOK_URLS` | Custom Webhook (comma-separated for multiple) | Optional* |
-| `STOCK_LIST` | Watchlist, e.g., `600519,300750` | ✅ |
+| `STOCK_LIST` | Watchlist for manual stock analysis, e.g., `600519,300750` | Optional |
 | `SERPAPI_API_KEYS` | SerpAPI Key | Recommended |
 | `ANSPIRE_API_KEYS` | [Anspire](https://open.anspire.cn/dsa?share_code=QFBC0FYC) API key (optional; shared by LLM and search; availability depends on account permissions) | Optional |
 | `TAVILY_API_KEYS` | Tavily Search API Key | Optional |
@@ -436,7 +436,7 @@ git push
 
 ### Schedule Details
 
-Default configuration: **Monday to Friday, 16:00 Beijing Time** auto-execution
+Market review runs automatically **Monday to Friday at 16:00 Beijing time**. Manual runs also default to `market-only`.
 
 Modify time: Edit cron expression in `.github/workflows/00-daily-analysis.yml`:
 

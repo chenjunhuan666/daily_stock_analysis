@@ -437,7 +437,7 @@ git push -u origin main
 | `EMAIL_PASSWORD` | 邮箱授权码 | 可选* |
 | `SERVERCHAN3_SENDKEY` | Server酱³ Sendkey | 可选* |
 | `CUSTOM_WEBHOOK_URLS` | 自定义 Webhook（多个逗号分隔） | 可选* |
-| `STOCK_LIST` | 自选股列表，如 `600519,300750` | ✅ |
+| `STOCK_LIST` | 手动个股分析的自选股列表，如 `600519,300750` | 可选 |
 | `SERPAPI_API_KEYS` | SerpAPI Key | 推荐 |
 | `ANSPIRE_API_KEYS` | [Anspire](https://open.anspire.cn/dsa?share_code=QFBC0FYC) API Key（可选，模型与搜索共用；可用性以账号权限为准） | 可选 |
 | `TAVILY_API_KEYS` | Tavily 搜索 API Key | 可选 |
@@ -480,7 +480,7 @@ git push
 
 ### 定时说明
 
-默认配置：**周一到周五，北京时间 16:00** 自动执行
+默认配置为**周一到周五北京时间 16:00** 自动执行大盘复盘。手动运行也默认使用 `market-only`。
 
 修改时间：编辑 `.github/workflows/00-daily-analysis.yml` 中的 cron 表达式：
 
