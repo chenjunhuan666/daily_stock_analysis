@@ -482,13 +482,16 @@ git push
 
 默认配置为**周一到周五北京时间 16:00** 自动执行大盘复盘。手动运行也默认使用 `market-only`。
 工作流在 **16:13** 再检查一次。当天收盘后的大盘报告已经发出时，定时任务会跳过重复发送。主排程和补跑均由 GitHub Actions 触发，实际启动时间取决于 GitHub 调度。
+排程显式指定 `Asia/Shanghai` 时区。定时任务如果在当日 16:00 前启动，会记录触发时间并报错，避免把未执行分析显示为成功。手动 `market-only` 也会核对当天邮件记录；需要重新发送时，可勾选 `force_run`。
 
 修改时间：编辑 `.github/workflows/00-daily-analysis.yml` 中的 cron 表达式：
 
 ```yaml
 schedule:
-  - cron: '0 8 * * 1-5'  # UTC 时间，+8 = 北京时间
-  - cron: '13 8 * * 1-5' # 北京时间 16:13 补跑
+  - cron: '0 16 * * 1-5'
+    timezone: 'Asia/Shanghai'
+  - cron: '13 16 * * 1-5'
+    timezone: 'Asia/Shanghai'
 ```
 
 常用 cron 示例：

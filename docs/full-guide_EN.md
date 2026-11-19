@@ -789,14 +789,16 @@ If `--stocks` is also present, the Futu portfolio wins. Scheduled mode reloads r
 ### GitHub Actions Schedule
 
 The market review is scheduled for 16:00 Beijing time on weekdays, with a backup check at 16:13. Scheduled runs check for a successful email delivery of that day's closing review before starting. Actual start times depend on GitHub Actions scheduling.
+Both schedules explicitly specify `Asia/Shanghai`. Scheduled runs arriving before 16:00 fail visibly and record their arrival time. Manual `market-only` runs also check for a prior delivery; select `force_run` to regenerate and send.
 
 Edit `.github/workflows/00-daily-analysis.yml`:
 
 ```yaml
 schedule:
-  # UTC time, Beijing time = UTC + 8
-  - cron: '0 8 * * 1-5'    # Monday to Friday 16:00 (Beijing Time)
-  - cron: '13 8 * * 1-5'   # Backup check at 16:13 (Beijing Time)
+  - cron: '0 16 * * 1-5'
+    timezone: 'Asia/Shanghai'
+  - cron: '13 16 * * 1-5'
+    timezone: 'Asia/Shanghai'
 ```
 
 Common time reference:
@@ -1720,7 +1722,7 @@ A: Modify the `STOCK_LIST` environment variable. English commas are recommended 
 Watchlist actions and saves containing only `STOCK_LIST` refresh the stock list while preserving other runtime settings and container environment overrides. Partial configuration saves are not blocked by existing, unrelated LLM channel or model selection errors. Changes to models, channels, routing files, or related credentials still validate the full model dependencies, and so does any save that enables an Agent path: switching `AGENT_BACKEND` / `AGENT_GENERATION_BACKEND` to LiteLLM (including `auto`), setting `AGENT_MODE=true`, or configuring `AGENT_SKILLS` to anything other than `all`. The last two drive the regular analysis Agent branch, which builds its own `LLMToolAdapter` and is not governed by `AGENT_BACKEND`. Saves that only disable `AGENT_MODE`, set `AGENT_SKILLS` to `all` or empty, or change unrelated keys are unaffected by the LLM configuration. An existing retired `codex_app_server` value may remain without blocking unrelated saves; explicitly saving or importing that value is still rejected. Existing model errors require a separate correction; a successful watchlist save does not establish that the model configuration is valid.
 
 ### Q: GitHub Actions not executing?
-A: Check if Actions is enabled, and if cron expression is correct (note it's UTC time).
+A: Check whether Actions is enabled and verify the cron expression together with its timezone. This fork explicitly uses `Asia/Shanghai`.
 
 ---
 

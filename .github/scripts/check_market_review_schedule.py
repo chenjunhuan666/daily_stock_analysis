@@ -14,6 +14,10 @@ WORKFLOW = "00-daily-analysis.yml"
 ANALYSIS_STEP = "执行股票分析"
 
 
+class ScheduleTimingError(RuntimeError):
+    """The scheduled run arrived outside the current closing-report window."""
+
+
 def github_get(path):
     request = Request(
         os.environ["GITHUB_API_URL"] + path,
@@ -38,10 +42,13 @@ def already_emailed(log, report_name):
     ))
 
 
-def skip_reason(now):
+def skip_reason(now, *, require_closing_time=True):
     cutoff = now.replace(hour=16, minute=0, second=0, microsecond=0)
-    if now < cutoff:
-        return "当前还未到北京时间 16:00，跳过延迟到本日盘前或盘中的定时任务。"
+    if now < cutoff and require_closing_time:
+        raise ScheduleTimingError(
+            f"任务在北京时间 {now:%Y-%m-%d %H:%M:%S} 启动，早于当日 16:00 收盘复盘时间。"
+            "请核对排程时区和触发延迟，本次不能标记为已完成大盘推送。"
+        )
 
     root = f"/repos/{os.environ['GITHUB_REPOSITORY']}/actions"
     cutoff_utc = cutoff.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -74,8 +81,13 @@ def skip_reason(now):
 
 
 def main():
+    now = datetime.now(BEIJING)
+    print(f"调度检查：北京时间 {now:%Y-%m-%d %H:%M:%S}，cron={os.environ.get('SCHEDULE_CRON') or 'manual'}")
     try:
-        reason = skip_reason(datetime.now(BEIJING))
+        reason = skip_reason(now, require_closing_time=os.environ.get("GITHUB_EVENT_NAME") == "schedule")
+    except ScheduleTimingError as error:
+        print(f"::error::{error}")
+        return 1
     except (URLError, TimeoutError, ValueError, KeyError) as error:
         # Report only the status or exception type. Signed log URLs are credentials.
         detail = f"HTTP {error.code}" if isinstance(error, HTTPError) else type(error).__name__
