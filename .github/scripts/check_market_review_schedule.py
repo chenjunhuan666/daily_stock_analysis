@@ -43,10 +43,10 @@ def already_emailed(log, report_name):
 
 
 def skip_reason(now, *, require_closing_time=True):
-    cutoff = now.replace(hour=16, minute=0, second=0, microsecond=0)
+    cutoff = now.replace(hour=15, minute=0, second=0, microsecond=0)
     if now < cutoff and require_closing_time:
         raise ScheduleTimingError(
-            f"任务在北京时间 {now:%Y-%m-%d %H:%M:%S} 启动，早于当日 16:00 收盘复盘时间。"
+            f"任务在北京时间 {now:%Y-%m-%d %H:%M:%S} 启动，早于当日 15:00 收盘时间。"
             "请核对排程时区和触发延迟，本次不能标记为已完成大盘推送。"
         )
 

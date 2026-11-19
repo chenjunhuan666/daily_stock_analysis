@@ -788,20 +788,20 @@ If `--stocks` is also present, the Futu portfolio wins. Scheduled mode reloads r
 
 ### GitHub Actions Schedule
 
-The market review is scheduled for 16:00 Beijing time on weekdays, with a backup check at 16:13. Scheduled runs check for a successful email delivery of that day's closing review before starting. Actual start times depend on GitHub Actions scheduling.
-Both schedules explicitly specify `Asia/Shanghai`. Scheduled runs arriving before 16:00 fail visibly and record their arrival time. Manual `market-only` runs also check for a prior delivery; select `force_run` to regenerate and send.
+On weekdays the workflow **analyzes the market after the close at 15:05 Beijing time and starts delivery at 16:00**. Analysis saves the report with `--no-notify`; the delivery script reads that day's report and waits until 16:00, or sends immediately if analysis finishes later. The 16:13 backup checks for a successful email delivery of the day's closing review, skipping repeats or rerunning if missing. Only one run executes at a time. Actual trigger times depend on GitHub Actions, so exact delivery times are not guaranteed.
+Both scheduling and runtime explicitly use `Asia/Shanghai`. Scheduled runs arriving before the 15:00 close fail visibly. The default job timeout is 90 minutes including the wait; set the repository variable `ANALYSIS_TIMEOUT_MINUTES` to at least `90` if configured. Missing current reports and failed delivery fail the job. Manual `market-only` runs check delivery history and wait until 16:00; `force_run` bypasses deduplication, trading-day checks, and waiting to regenerate and send immediately.
 
 Edit `.github/workflows/00-daily-analysis.yml`:
 
 ```yaml
 schedule:
-  - cron: '0 16 * * 1-5'
+  - cron: '5 15 * * 1-5'
     timezone: 'Asia/Shanghai'
   - cron: '13 16 * * 1-5'
     timezone: 'Asia/Shanghai'
 ```
 
-Common time reference:
+To change the delivery time, also update `--not-before 16:00` in the workflow. The following reference uses default UTC schedules without `timezone`; with `Asia/Shanghai`, use Beijing wall-clock times directly.
 
 | Beijing Time | UTC cron expression |
 |---------|----------------|

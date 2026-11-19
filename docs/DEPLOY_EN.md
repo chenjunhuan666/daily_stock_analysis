@@ -436,21 +436,22 @@ git push
 
 ### Schedule Details
 
-Market review runs automatically **Monday to Friday at 16:00 Beijing time**. Manual runs also default to `market-only`.
-The workflow checks again at **16:13**. Scheduled runs skip repeat delivery when the day's closing review has already been emailed. GitHub Actions controls the actual start time for both triggers.
-Both schedules explicitly use `Asia/Shanghai`. A scheduled run starting before 16:00 records its arrival time and fails visibly instead of completing without analysis. Manual `market-only` runs also check delivery history; select `force_run` to send a fresh report.
+On weekdays the workflow **prepares the closing market review at 15:05 Beijing time and starts delivery at 16:00**. Analysis first saves the day's report using `--no-notify`; the delivery script then waits until 16:00 and sends it through the configured notification channels. If analysis finishes after 16:00, it sends immediately. Manual runs default to `market-only`.
+The **16:13** backup checks for a successful email delivery of that day's closing report, skipping repeats or regenerating and sending a missing report. Only one run executes at a time. Actual starts depend on GitHub Actions scheduling, so exact arrival times are not guaranteed.
+Both scheduling and runtime explicitly use `Asia/Shanghai`. Scheduled runs arriving before the 15:00 close fail visibly, as do a missing current report or a delivery failure. Manual `market-only` runs check delivery history and wait until 16:00; `force_run` bypasses deduplication, trading-day checks, and waiting to regenerate and send immediately.
+The default job timeout is 90 minutes, including the delivery wait. If the repository variable `ANALYSIS_TIMEOUT_MINUTES` is set, keep it at least `90`.
 
 Modify time: Edit cron expression in `.github/workflows/00-daily-analysis.yml`:
 
 ```yaml
 schedule:
-  - cron: '0 16 * * 1-5'
+  - cron: '5 15 * * 1-5'
     timezone: 'Asia/Shanghai'
   - cron: '13 16 * * 1-5'
     timezone: 'Asia/Shanghai'
 ```
 
-Common cron examples:
+The following examples omit `timezone` and use UTC conversions. The schedules above explicitly use `Asia/Shanghai` and take Beijing wall-clock times directly. To change the delivery time, also update `--not-before 16:00` in the workflow.
 | Expression | Description |
 |--------|------|
 | `'0 8 * * 1-5'` | Mon-Fri 16:00 (Beijing) |
@@ -479,7 +480,7 @@ A: GitHub Actions scheduled tasks may have 5-15 minute delays, and only trigger 
 A: Actions → Select run record → Artifacts → Download `analysis-reports-xxx`
 
 **Q: Is the free quota enough?**
-A: Each run takes about 2-5 minutes, 22 workdays per month = 44-110 minutes, well below the 2000 minute limit.
+A: The current flow starts analysis at 15:05 and waits until 16:00. Waiting uses runner time too: budget roughly one hour per weekday, or about 1320 minutes for 22 workdays, plus backup and manual runs. Check your account's actual usage and quota.
 
 ---
 
