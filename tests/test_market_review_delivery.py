@@ -1,6 +1,6 @@
-"""Regression tests for preparing a closing report before its delivery time."""
+"""Regression tests for immediately delivering a completed closing report."""
 
-from datetime import datetime, time, timedelta
+from datetime import datetime
 import importlib.util
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -25,35 +25,26 @@ class MarketReviewDeliveryTests(unittest.TestCase):
         self.addCleanup(directory.cleanup)
         self.report = Path(directory.name) / "market_review_20261119.md"
         self.report.write_text("# 大盘复盘\n收盘分析结果", encoding="utf-8")
-        self.now = datetime(2026, 11, 19, 15, 12, tzinfo=delivery.BEIJING)
+        self.now = datetime(2026, 11, 19, 15, 37, tzinfo=delivery.BEIJING)
         self.notifier = Mock()
         self.notifier.send_with_results.return_value = SimpleNamespace(
             success=True, channel_results=[SimpleNamespace(channel="email", success=True)],
         )
         self.sent_at = []
         self.notifier.send_with_results.side_effect = self.record_send
-        self.sleeps = []
 
     def record_send(self, *args, **kwargs):
         self.sent_at.append(self.now)
         return self.notifier.send_with_results.return_value
 
-    def sleep(self, seconds):
-        self.assertFalse(self.sent_at, "A report was sent before the delivery time")
-        self.assertLessEqual(seconds, 60)
-        self.sleeps.append(seconds)
-        self.now += timedelta(seconds=seconds)
-
-    def deliver(self, **kwargs):
+    def deliver(self):
         return delivery.deliver_report(
-            self.report, self.notifier, not_before=time(16),
-            now=lambda: self.now, sleep=self.sleep, **kwargs,
+            self.report, self.notifier, now=lambda: self.now,
         )
 
-    def test_prepared_report_waits_until_1600_then_sends_once(self):
+    def test_prepared_report_sends_immediately_before_1600(self):
         self.assertTrue(self.deliver())
-        self.assertEqual(self.sent_at, [self.now.replace(hour=16, minute=0)])
-        self.assertEqual(sum(self.sleeps), 48 * 60)
+        self.assertEqual(self.sent_at, [self.now])
         self.notifier.send_with_results.assert_called_once_with(
             "# 大盘复盘\n收盘分析结果", email_send_to_all=True, route_type="report",
         )
@@ -62,12 +53,6 @@ class MarketReviewDeliveryTests(unittest.TestCase):
         self.now = self.now.replace(hour=16, minute=7)
         self.assertTrue(self.deliver())
         self.assertEqual(self.sent_at, [self.now])
-        self.assertFalse(self.sleeps)
-
-    def test_forced_manual_run_sends_immediately(self):
-        self.assertTrue(self.deliver(immediate=True))
-        self.assertEqual(self.sent_at, [self.now])
-        self.assertFalse(self.sleeps)
 
     def test_failed_email_is_a_failure_even_if_another_channel_succeeds(self):
         self.notifier.send_with_results.return_value = SimpleNamespace(
@@ -76,11 +61,11 @@ class MarketReviewDeliveryTests(unittest.TestCase):
                 SimpleNamespace(channel="feishu", success=True),
             ],
         )
-        self.assertFalse(self.deliver(immediate=True))
+        self.assertFalse(self.deliver())
 
     def test_missing_or_suppressed_notification_is_a_failure(self):
         self.notifier.send_with_results.return_value = SimpleNamespace(success=False, channel_results=[])
-        self.assertFalse(self.deliver(immediate=True))
+        self.assertFalse(self.deliver())
 
     def test_empty_or_old_report_is_never_sent(self):
         for name, content in (("market_review_20261119.md", "  "), ("market_review_20261118.md", "old")):
@@ -91,13 +76,11 @@ class MarketReviewDeliveryTests(unittest.TestCase):
                     self.deliver()
         self.notifier.send_with_results.assert_not_called()
 
-    def test_date_change_during_wait_prevents_stale_delivery(self):
-        def cross_midnight(seconds):
-            self.now = self.now.replace(day=20, hour=0, minute=0)
-
+    def test_date_change_before_sending_prevents_stale_delivery(self):
+        times = iter([self.now, self.now.replace(day=20, hour=0, minute=0)])
         with self.assertRaises(ValueError):
             delivery.deliver_report(
-                self.report, self.notifier, not_before=time(16), now=lambda: self.now, sleep=cross_midnight,
+                self.report, self.notifier, now=lambda: next(times),
             )
         self.notifier.send_with_results.assert_not_called()
 
@@ -117,7 +100,7 @@ class MarketReviewDeliveryTests(unittest.TestCase):
             for region, exit_code in (("", 0), ("cn", 1)):
                 calendar.compute_effective_region.return_value = region
                 with self.subTest(region=region):
-                    self.assertEqual(delivery.main(["--not-before", "16:00"]), exit_code)
+                    self.assertEqual(delivery.main([]), exit_code)
         self.notifier.send_with_results.assert_not_called()
 
     def test_workflow_prepares_without_notify_then_delivers_with_same_force_flag(self):
@@ -127,12 +110,12 @@ class MarketReviewDeliveryTests(unittest.TestCase):
         )
         job = workflow["jobs"]["analyze"]
         self.assertEqual(job["env"]["TZ"], "Asia/Shanghai")
-        self.assertIn("'90'", job["timeout-minutes"])
+        self.assertIn("'30'", job["timeout-minutes"])
         run = next(step["run"] for step in job["steps"] if step.get("id") == "analysis")
         market_only = run.split('if [ "$MODE" = "market-only" ]; then', 1)[1].split("elif", 1)[0]
         self.assertEqual([line.strip() for line in market_only.strip().splitlines()], [
             "python main.py --market-review --no-notify $FORCE_RUN_ARG",
-            "python .github/scripts/deliver_market_review.py --not-before 16:00 $FORCE_RUN_ARG",
+            "python .github/scripts/deliver_market_review.py $FORCE_RUN_ARG",
         ])
 
 

@@ -436,22 +436,22 @@ git push
 
 ### Schedule Details
 
-On weekdays the workflow **prepares the closing market review at 15:05 Beijing time and starts delivery at 16:00**. Analysis first saves the day's report using `--no-notify`; the delivery script then waits until 16:00 and sends it through the configured notification channels. If analysis finishes after 16:00, it sends immediately. Manual runs default to `market-only`.
+On weekdays the workflow **starts the closing market review at 15:30 Beijing time and sends it immediately after analysis**. Analysis first saves the day's report using `--no-notify`; the delivery script then immediately sends it through the configured notification channels. Manual runs default to `market-only`.
 The **16:13** backup checks for a successful email delivery of that day's closing report, skipping repeats or regenerating and sending a missing report. Only one run executes at a time. Actual starts depend on GitHub Actions scheduling, so exact arrival times are not guaranteed.
-Both scheduling and runtime explicitly use `Asia/Shanghai`. Scheduled runs arriving before the 15:00 close fail visibly, as do a missing current report or a delivery failure. Manual `market-only` runs check delivery history and wait until 16:00; `force_run` bypasses deduplication, trading-day checks, and waiting to regenerate and send immediately.
-The default job timeout is 90 minutes, including the delivery wait. If the repository variable `ANALYSIS_TIMEOUT_MINUTES` is set, keep it at least `90`.
+Both scheduling and runtime explicitly use `Asia/Shanghai`. Scheduled runs arriving before the 15:00 close fail visibly, as do a missing current report or a delivery failure. Manual `market-only` runs also check delivery history; `force_run` bypasses deduplication and trading-day checks to regenerate and send.
+The default job timeout is 30 minutes, adjustable with the repository variable `ANALYSIS_TIMEOUT_MINUTES`.
 
 Modify time: Edit cron expression in `.github/workflows/00-daily-analysis.yml`:
 
 ```yaml
 schedule:
-  - cron: '5 15 * * 1-5'
+  - cron: '30 15 * * 1-5'
     timezone: 'Asia/Shanghai'
   - cron: '13 16 * * 1-5'
     timezone: 'Asia/Shanghai'
 ```
 
-The following examples omit `timezone` and use UTC conversions. The schedules above explicitly use `Asia/Shanghai` and take Beijing wall-clock times directly. To change the delivery time, also update `--not-before 16:00` in the workflow.
+The following examples omit `timezone` and use UTC conversions. The schedules above explicitly use `Asia/Shanghai` and take Beijing wall-clock times directly.
 | Expression | Description |
 |--------|------|
 | `'0 8 * * 1-5'` | Mon-Fri 16:00 (Beijing) |
@@ -480,7 +480,7 @@ A: GitHub Actions scheduled tasks may have 5-15 minute delays, and only trigger 
 A: Actions → Select run record → Artifacts → Download `analysis-reports-xxx`
 
 **Q: Is the free quota enough?**
-A: The current flow starts analysis at 15:05 and waits until 16:00. Waiting uses runner time too: budget roughly one hour per weekday, or about 1320 minutes for 22 workdays, plus backup and manual runs. Check your account's actual usage and quota.
+A: Analysis starts at 15:30 and sends immediately on completion, with no runner time spent waiting for a fixed delivery time. Usage depends on data retrieval, search, model latency, and reruns. Check your account's actual usage and quota.
 
 ---
 

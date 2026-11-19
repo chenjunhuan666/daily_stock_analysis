@@ -202,7 +202,7 @@ To get started quickly, you need at minimum:
 
 ### 5. Done!
 
-Market review runs automatically every weekday at **16:00 Beijing time**. Manual runs also default to `market-only`. Choose `full` or `stocks-only` to analyze the watchlist.
+Market review starts every weekday at **15:30 Beijing time** and sends immediately after analysis. Manual runs also default to `market-only`. Choose `full` or `stocks-only` to analyze the watchlist.
 
 ---
 
@@ -788,20 +788,20 @@ If `--stocks` is also present, the Futu portfolio wins. Scheduled mode reloads r
 
 ### GitHub Actions Schedule
 
-On weekdays the workflow **analyzes the market after the close at 15:05 Beijing time and starts delivery at 16:00**. Analysis saves the report with `--no-notify`; the delivery script reads that day's report and waits until 16:00, or sends immediately if analysis finishes later. The 16:13 backup checks for a successful email delivery of the day's closing review, skipping repeats or rerunning if missing. Only one run executes at a time. Actual trigger times depend on GitHub Actions, so exact delivery times are not guaranteed.
-Both scheduling and runtime explicitly use `Asia/Shanghai`. Scheduled runs arriving before the 15:00 close fail visibly. The default job timeout is 90 minutes including the wait; set the repository variable `ANALYSIS_TIMEOUT_MINUTES` to at least `90` if configured. Missing current reports and failed delivery fail the job. Manual `market-only` runs check delivery history and wait until 16:00; `force_run` bypasses deduplication, trading-day checks, and waiting to regenerate and send immediately.
+On weekdays the workflow **starts the market review at 15:30 Beijing time and sends it immediately after analysis**. Analysis saves the report with `--no-notify`; the delivery script reads that day's report and immediately sends it. The 16:13 backup checks for a successful email delivery of the day's closing review, skipping repeats or rerunning if missing. Only one run executes at a time. Actual trigger times depend on GitHub Actions, so exact start times are not guaranteed.
+Both scheduling and runtime explicitly use `Asia/Shanghai`. Scheduled runs arriving before the 15:00 close fail visibly. The default job timeout is 30 minutes, adjustable with the repository variable `ANALYSIS_TIMEOUT_MINUTES`. Missing current reports and failed delivery fail the job. Manual `market-only` runs also check delivery history; `force_run` bypasses deduplication and trading-day checks to regenerate and send.
 
 Edit `.github/workflows/00-daily-analysis.yml`:
 
 ```yaml
 schedule:
-  - cron: '5 15 * * 1-5'
+  - cron: '30 15 * * 1-5'
     timezone: 'Asia/Shanghai'
   - cron: '13 16 * * 1-5'
     timezone: 'Asia/Shanghai'
 ```
 
-To change the delivery time, also update `--not-before 16:00` in the workflow. The following reference uses default UTC schedules without `timezone`; with `Asia/Shanghai`, use Beijing wall-clock times directly.
+The following reference uses default UTC schedules without `timezone`; with `Asia/Shanghai`, use Beijing wall-clock times directly.
 
 | Beijing Time | UTC cron expression |
 |---------|----------------|

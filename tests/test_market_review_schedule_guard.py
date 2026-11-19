@@ -32,7 +32,7 @@ class MarketReviewScheduleGuardTests(unittest.TestCase):
         path = SCRIPT.parents[1] / "workflows/00-daily-analysis.yml"
         workflow = yaml.load(path.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
         self.assertEqual(workflow["on"]["schedule"], [
-            {"cron": "5 15 * * 1-5", "timezone": "Asia/Shanghai"},
+            {"cron": "30 15 * * 1-5", "timezone": "Asia/Shanghai"},
             {"cron": "13 16 * * 1-5", "timezone": "Asia/Shanghai"},
         ])
         self.assertEqual(workflow["on"]["workflow_dispatch"]["inputs"]["mode"]["default"], "market-only")
@@ -58,7 +58,7 @@ class MarketReviewScheduleGuardTests(unittest.TestCase):
 
     def test_post_close_run_starts_analysis_and_checks_from_market_close(self):
         with patch.object(guard, "get_json", return_value={"total_count": 0, "workflow_runs": []}) as github:
-            self.assertIsNone(guard.skip_reason(self.now.replace(hour=15, minute=5)))
+            self.assertIsNone(guard.skip_reason(self.now.replace(hour=15, minute=30)))
             self.assertIn("2026-11-19T07%3A00%3A00Z", github.call_args.args[0])
 
     def test_only_a_delivered_current_market_report_skips(self):

@@ -1,11 +1,10 @@
-"""Send a prepared closing report at or after the requested Beijing time."""
+"""Send the current Beijing day's closing report as soon as analysis completes."""
 
 import argparse
-from datetime import datetime, time as clock_time, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 import logging
 from pathlib import Path
 import sys
-import time
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -13,8 +12,8 @@ BEIJING = timezone(timedelta(hours=8))
 logger = logging.getLogger(__name__)
 
 
-def deliver_report(report_path, notifier, *, not_before, immediate=False, now=None, sleep=time.sleep):
-    """Keep the generated report, wait for delivery time, and check the send result."""
+def deliver_report(report_path, notifier, *, now=None):
+    """Validate the generated report, send immediately, and check the result."""
     now = now or (lambda: datetime.now(BEIJING))
     started = now()
     expected_name = started.strftime("market_review_%Y%m%d.md")
@@ -24,13 +23,9 @@ def deliver_report(report_path, notifier, *, not_before, immediate=False, now=No
     if not content:
         raise ValueError("The closing report is empty")
 
-    delivery_time = datetime.combine(started.date(), not_before, tzinfo=BEIJING)
-    logger.info("大盘报告已准备：%s；北京时间发送下限 %s", report_path.name, delivery_time.isoformat())
-    if not immediate:
-        while (remaining := (delivery_time - now()).total_seconds()) > 0:
-            sleep(min(remaining, 60))
     if now().date() != started.date():
         raise ValueError("The prepared report expired before delivery")
+    logger.info("大盘报告已准备，立即推送：%s", report_path.name)
 
     result = notifier.send_with_results(content, email_send_to_all=True, route_type="report")
     # A successful future channel must not hide a failed email delivery.
@@ -44,11 +39,8 @@ def deliver_report(report_path, notifier, *, not_before, immediate=False, now=No
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--not-before", required=True, type=clock_time.fromisoformat)
-    parser.add_argument("--force-run", action="store_true", help="Skip trading-day checks and send immediately")
+    parser.add_argument("--force-run", action="store_true", help="Skip trading-day checks")
     args = parser.parse_args(argv)
-    if args.not_before.tzinfo is not None:
-        parser.error("--not-before must be a Beijing local time without a timezone suffix")
 
     sys.path.insert(0, str(ROOT))
     from src.config import get_config
@@ -66,9 +58,7 @@ def main(argv=None):
 
     report_path = ROOT / "reports" / datetime.now(BEIJING).strftime("market_review_%Y%m%d.md")
     try:
-        success = deliver_report(
-            report_path, NotificationService(), not_before=args.not_before, immediate=args.force_run,
-        )
+        success = deliver_report(report_path, NotificationService())
     except (OSError, ValueError) as error:
         logger.error("大盘推送未完成（%s），请检查本次报告及发送日志。", type(error).__name__)
         return 1

@@ -154,7 +154,7 @@ Open the `Actions` tab and click `I understand my workflows, go ahead and enable
 
 #### Done
 
-The weekday workflow prepares the market review after the close at **15:05 Beijing time and starts delivery at 16:00**, with a backup check at 16:13. Actual start times depend on GitHub Actions scheduling; non-trading days are skipped by default. Manual runs default to `market-only`, with other modes available. Forced runs, trading-day checks, and resume rules are covered in the [Full Guide](./full-guide_EN.md#scheduled-task-configuration).
+The weekday workflow **starts the market review at 15:30 Beijing time and sends it immediately after analysis**, with a backup check at 16:13. Actual start times depend on GitHub Actions scheduling; non-trading days are skipped by default. Manual runs default to `market-only`, with other modes available. Forced runs, trading-day checks, and resume rules are covered in the [Full Guide](./full-guide_EN.md#scheduled-task-configuration).
 
 ### Option 2: Local / Docker Deployment
 
