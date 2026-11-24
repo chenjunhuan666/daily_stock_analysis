@@ -789,19 +789,17 @@ If `--stocks` is also present, the Futu portfolio wins. Scheduled mode reloads r
 ### GitHub Actions Schedule
 
 On weekdays the workflow **starts the market review at 15:30 Beijing time and sends it immediately after analysis**. Analysis saves the report with `--no-notify`; the delivery script reads that day's report and immediately sends it. The 16:13 backup checks for a successful email delivery of the day's closing review, skipping repeats or rerunning if missing. Only one run executes at a time. Actual trigger times depend on GitHub Actions, so exact start times are not guaranteed.
-Both scheduling and runtime explicitly use `Asia/Shanghai`. Scheduled runs arriving before the 15:00 close fail visibly. The default job timeout is 30 minutes, adjustable with the repository variable `ANALYSIS_TIMEOUT_MINUTES`. Missing current reports and failed delivery fail the job. Manual `market-only` runs also check delivery history; `force_run` bypasses deduplication and trading-day checks to regenerate and send.
+Schedules use default UTC without `schedule.timezone`: UTC `07:30/08:13` corresponds to Beijing `15:30/16:13`. Runtime keeps `TZ=Asia/Shanghai` for application dates and logs; it does not change the cron timezone. Scheduled runs arriving before the 15:00 close fail visibly. The default job timeout is 30 minutes, adjustable with the repository variable `ANALYSIS_TIMEOUT_MINUTES`. Missing current reports and failed delivery fail the job. Manual `market-only` runs also check delivery history; `force_run` bypasses deduplication and trading-day checks to regenerate and send.
 
 Edit `.github/workflows/00-daily-analysis.yml`:
 
 ```yaml
 schedule:
-  - cron: '30 15 * * 1-5'
-    timezone: 'Asia/Shanghai'
-  - cron: '13 16 * * 1-5'
-    timezone: 'Asia/Shanghai'
+  - cron: '30 7 * * 1-5'  # 15:30 Beijing time
+  - cron: '13 8 * * 1-5'  # 16:13 Beijing time
 ```
 
-The following reference uses default UTC schedules without `timezone`; with `Asia/Shanghai`, use Beijing wall-clock times directly.
+The following reference uses default UTC, matching this workflow. Convert Beijing time when editing cron.
 
 | Beijing Time | UTC cron expression |
 |---------|----------------|

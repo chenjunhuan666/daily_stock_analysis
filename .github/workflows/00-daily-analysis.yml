@@ -1,12 +1,11 @@
 name: 每日股票分析
 
 on:
-  # 北京时间 15:30 开始分析，完成后立即推送，16:13 检查并补跑。
+  # cron 使用默认 UTC：07:30 = 北京时间 15:30，08:13 = 北京时间 16:13。
+  # 运行环境的 TZ 只影响应用时间，不参与 cron 换算；分析完成后立即推送。
   schedule:
-    - cron: '30 15 * * 1-5'
-      timezone: 'Asia/Shanghai'
-    - cron: '13 16 * * 1-5'
-      timezone: 'Asia/Shanghai'
+    - cron: '30 7 * * 1-5'
+    - cron: '13 8 * * 1-5'
   
   # 手动触发
   workflow_dispatch:

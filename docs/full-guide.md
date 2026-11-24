@@ -847,19 +847,17 @@ OpenD 默认地址为 `127.0.0.1:11111`，可用 `FUTU_OPEND_HOST` / `FUTU_OPEND
 ### GitHub Actions 定时
 
 工作日北京时间 **15:30 开始分析大盘，分析完成后立即推送**。分析通过 `--no-notify` 保存报告，发送脚本读取当天报告并立即发送。16:13 再核对当天收盘后的邮件记录，已发出则跳过，未发出则补跑。同一时间只运行一个任务。实际触发时间由 GitHub Actions 调度，不能保证准点启动。
-排程与运行环境均显式使用 `Asia/Shanghai`，定时任务在当日 15:00 收盘前异常启动会报错。任务默认超时 30 分钟，可通过仓库变量 `ANALYSIS_TIMEOUT_MINUTES` 调整。缺少当日报告或推送失败会使任务失败。手动 `market-only` 同样核对当日发送记录；勾选 `force_run` 可跳过去重和交易日检查，重新生成并发送。
+排程使用默认 UTC，不设置 `schedule.timezone`：UTC `07:30/08:13` 对应北京时间 `15:30/16:13`。运行环境的 `TZ=Asia/Shanghai` 只影响应用日期和日志，不改变 cron 时区。定时任务在当日 15:00 收盘前异常启动会报错。任务默认超时 30 分钟，可通过仓库变量 `ANALYSIS_TIMEOUT_MINUTES` 调整。缺少当日报告或推送失败会使任务失败。手动 `market-only` 同样核对当日发送记录；勾选 `force_run` 可跳过去重和交易日检查，重新生成并发送。
 
 编辑 `.github/workflows/00-daily-analysis.yml`:
 
 ```yaml
 schedule:
-  - cron: '30 15 * * 1-5'
-    timezone: 'Asia/Shanghai'
-  - cron: '13 16 * * 1-5'
-    timezone: 'Asia/Shanghai'
+  - cron: '30 7 * * 1-5'  # 北京时间 15:30
+  - cron: '13 8 * * 1-5'  # 北京时间 16:13
 ```
 
-以下时间对照适用于省略 `timezone`、使用默认 UTC 的排程；显式使用 `Asia/Shanghai` 时直接填写北京时间。
+以下时间对照与本工作流一致，均使用默认 UTC；修改排程时需要换算北京时间。
 
 | 北京时间 | UTC cron 表达式 |
 |---------|----------------|

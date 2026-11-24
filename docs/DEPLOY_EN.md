@@ -438,20 +438,18 @@ git push
 
 On weekdays the workflow **starts the closing market review at 15:30 Beijing time and sends it immediately after analysis**. Analysis first saves the day's report using `--no-notify`; the delivery script then immediately sends it through the configured notification channels. Manual runs default to `market-only`.
 The **16:13** backup checks for a successful email delivery of that day's closing report, skipping repeats or regenerating and sending a missing report. Only one run executes at a time. Actual starts depend on GitHub Actions scheduling, so exact arrival times are not guaranteed.
-Both scheduling and runtime explicitly use `Asia/Shanghai`. Scheduled runs arriving before the 15:00 close fail visibly, as do a missing current report or a delivery failure. Manual `market-only` runs also check delivery history; `force_run` bypasses deduplication and trading-day checks to regenerate and send.
+Schedules use default UTC: `07:30` is `15:30` Beijing time, and `08:13` is `16:13`, without `schedule.timezone`. Runtime keeps `TZ=Asia/Shanghai` for application dates and logs; it does not change the cron timezone. Scheduled runs arriving before the 15:00 close fail visibly, as do a missing current report or a delivery failure. Manual `market-only` runs also check delivery history; `force_run` bypasses deduplication and trading-day checks to regenerate and send.
 The default job timeout is 30 minutes, adjustable with the repository variable `ANALYSIS_TIMEOUT_MINUTES`.
 
 Modify time: Edit cron expression in `.github/workflows/00-daily-analysis.yml`:
 
 ```yaml
 schedule:
-  - cron: '30 15 * * 1-5'
-    timezone: 'Asia/Shanghai'
-  - cron: '13 16 * * 1-5'
-    timezone: 'Asia/Shanghai'
+  - cron: '30 7 * * 1-5'  # 15:30 Beijing time
+  - cron: '13 8 * * 1-5'  # 16:13 Beijing time
 ```
 
-The following examples omit `timezone` and use UTC conversions. The schedules above explicitly use `Asia/Shanghai` and take Beijing wall-clock times directly.
+The examples below and the schedules above all use default UTC. Subtract eight hours from Beijing time when editing cron.
 | Expression | Description |
 |--------|------|
 | `'0 8 * * 1-5'` | Mon-Fri 16:00 (Beijing) |

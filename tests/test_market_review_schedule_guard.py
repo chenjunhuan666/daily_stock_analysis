@@ -2,7 +2,7 @@
 
 import importlib.util
 import os
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -28,20 +28,35 @@ class MarketReviewScheduleGuardTests(unittest.TestCase):
         self.environment.start()
         self.addCleanup(self.environment.stop)
 
-    def test_workflow_uses_explicit_beijing_schedules(self):
+    def test_workflow_uses_utc_schedules_for_beijing_afternoon(self):
         path = SCRIPT.parents[1] / "workflows/00-daily-analysis.yml"
         workflow = yaml.load(path.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
         self.assertEqual(workflow["on"]["schedule"], [
-            {"cron": "30 15 * * 1-5", "timezone": "Asia/Shanghai"},
-            {"cron": "13 16 * * 1-5", "timezone": "Asia/Shanghai"},
+            {"cron": "30 7 * * 1-5"},
+            {"cron": "13 8 * * 1-5"},
         ])
         self.assertEqual(workflow["on"]["workflow_dispatch"]["inputs"]["mode"]["default"], "market-only")
+        monday = datetime(2026, 11, 23, tzinfo=timezone.utc)
+        for offset in range(5):
+            for entry, expected in zip(workflow["on"]["schedule"], ((15, 30), (16, 13))):
+                minute, hour, _, _, weekdays = entry["cron"].split()
+                scheduled = (monday + timedelta(days=offset)).replace(hour=int(hour), minute=int(minute))
+                local = scheduled.astimezone(guard.BEIJING)
+                with self.subTest(day=offset, cron=entry["cron"]):
+                    self.assertEqual(weekdays, "1-5")
+                    self.assertEqual((local.hour, local.minute), expected)
+                    self.assertEqual(local.date(), scheduled.date())
 
     def test_delayed_early_morning_schedule_is_an_error(self):
         with patch.object(guard, "get_json") as github:
-            for hour, minute in ((1, 8), (1, 13), (1, 31)):
-                with self.subTest(hour=hour, minute=minute), self.assertRaises(guard.ScheduleTimingError):
-                    guard.skip_reason(self.now.replace(hour=hour, minute=minute))
+            for stamp in (
+                "2026-11-19T01:08:00+08:00", "2026-11-19T01:13:00+08:00",
+                "2026-11-19T01:31:00+08:00", "2026-11-21T00:17:45+08:00",
+                "2026-11-21T00:56:59+08:00", "2026-11-24T03:23:59+08:00",
+                "2026-11-24T04:11:01+08:00",
+            ):
+                with self.subTest(stamp=stamp), self.assertRaises(guard.ScheduleTimingError):
+                    guard.skip_reason(datetime.fromisoformat(stamp))
             github.assert_not_called()
 
     def test_early_schedule_does_not_write_successful_skip(self):
